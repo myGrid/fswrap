@@ -136,7 +136,7 @@ public class TestWrappedFS {
 	}
 
 	@Test
-	public void copy() throws IOException {
+	public void copy() throws Exception {
 		
 		String fromPath = "from.txt";
 		Path origFrom = origTemp.resolve(fromPath);
@@ -162,7 +162,7 @@ public class TestWrappedFS {
 	}
 	
 	@Test
-	public void move() throws IOException {
+	public void move() throws Exception {
 		String fromPath = "from.txt";
 		Path origFrom = origTemp.resolve(fromPath);
 		Path from = temp.resolve(fromPath);

@@ -126,9 +126,28 @@ public class TestListener extends TestWrappedFS {
 				loggingListener.log.get(0).startsWith("newByteChannel"));
 		assertTrue(
 				loggingListener.log.get(1).startsWith("newByteChannel"));
-
+	
 	}
-
+	
+	@Override
+	@Test
+	public void copy() throws Exception {
+		super.copy();
+		assertTrue(
+				loggingListener.log.get(0).startsWith("newByteChannel"));
+		assertTrue(
+				loggingListener.log.get(1).startsWith("copied"));
+	}
+	
+	@Override
+	@Test
+	public void move() throws Exception {
+		super.move();
+		assertTrue(
+				loggingListener.log.get(0).startsWith("newByteChannel"));
+		assertTrue(
+				loggingListener.log.get(1).startsWith("moved"));
+	}
 	
 	@After
 	public void printLog() throws Exception {
