@@ -12,18 +12,18 @@ import java.util.Set;
 
 public interface FileSystemEventListener extends EventListener {
 
-	void newFileSystem(WrappedFileSystem fs, Map<String, ?> env);
-
-	void newByteChannel(Path path, Set<? extends OpenOption> options,
-			FileAttribute<?>[] attrs, SeekableByteChannel byteChannel);
+	void copied(Path source, Path target, CopyOption[] options);
 
 	void createdDirectory(Path dir, FileAttribute<?>[] attrs);
 
 	void deleted(Path path);
 
-	void copied(Path source, Path target, CopyOption[] options);
-
 	void moved(Path source, Path target, CopyOption[] options);
+
+	void newByteChannel(Path path, Set<? extends OpenOption> options,
+			FileAttribute<?>[] attrs, SeekableByteChannel byteChannel);
+
+	void newFileSystem(WrappedFileSystem fs, Map<String, ?> env);
 
 	void setAttribute(Path path, String attribute, Object value,
 			LinkOption[] options);

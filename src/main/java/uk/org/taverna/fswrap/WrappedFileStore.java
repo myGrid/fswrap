@@ -13,32 +13,37 @@ public class WrappedFileStore extends FileStore {
 		this.originalFileStore = zipFileStore;
 	}
 	
-	public String name() {
-		return originalFileStore.name();
+	public Object getAttribute(String attribute) throws IOException {
+		return originalFileStore.getAttribute(attribute);
 	}
 
-	public int hashCode() {
-		return originalFileStore.hashCode();
-	}
-
-	public String type() {
-		return "wrap";
-	}
-
-	public boolean isReadOnly() {
-		return originalFileStore.isReadOnly();
+	public <V extends FileStoreAttributeView> V getFileStoreAttributeView(
+			Class<V> type) {
+		return originalFileStore.getFileStoreAttributeView(type);
 	}
 
 	public long getTotalSpace() throws IOException {
 		return originalFileStore.getTotalSpace();
 	}
 
+	public long getUnallocatedSpace() throws IOException {
+		return originalFileStore.getUnallocatedSpace();
+	}
+
 	public long getUsableSpace() throws IOException {
 		return originalFileStore.getUsableSpace();
 	}
 
-	public long getUnallocatedSpace() throws IOException {
-		return originalFileStore.getUnallocatedSpace();
+	public int hashCode() {
+		return originalFileStore.hashCode();
+	}
+
+	public boolean isReadOnly() {
+		return originalFileStore.isReadOnly();
+	}
+
+	public String name() {
+		return originalFileStore.name();
 	}
 
 	public boolean supportsFileAttributeView(
@@ -50,13 +55,8 @@ public class WrappedFileStore extends FileStore {
 		return originalFileStore.supportsFileAttributeView(name);
 	}
 
-	public <V extends FileStoreAttributeView> V getFileStoreAttributeView(
-			Class<V> type) {
-		return originalFileStore.getFileStoreAttributeView(type);
-	}
-
-	public Object getAttribute(String attribute) throws IOException {
-		return originalFileStore.getAttribute(attribute);
+	public String type() {
+		return "wrap";
 	}
 
 

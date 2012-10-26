@@ -8,9 +8,9 @@ import java.util.Iterator;
 
 public class WrappedDirectoryStream implements DirectoryStream<Path> {
 
-	private DirectoryStream<Path> originalDirectoryStream;
-	private WrappedFileSystem fileSystem;
 	private WrappedPath dir;
+	private WrappedFileSystem fileSystem;
+	private DirectoryStream<Path> originalDirectoryStream;
 
 	public WrappedDirectoryStream(Path dir, DirectoryStream<Path> originalDirectoryStream) {
 		if (! (dir instanceof WrappedPath)) {
