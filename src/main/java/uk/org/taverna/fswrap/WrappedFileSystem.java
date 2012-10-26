@@ -15,8 +15,8 @@ import java.util.Set;
 
 public class WrappedFileSystem extends FileSystem {
 
-	private FileSystem originalFilesystem;
-	private WrappedFileSystemProvider provider;
+	private final FileSystem originalFilesystem;
+	private final WrappedFileSystemProvider provider;
 	private WrappedFileStore wrappedFileStore;
 
 	public WrappedFileSystem(WrappedFileSystemProvider provider, URI uri,
@@ -28,28 +28,32 @@ public class WrappedFileSystem extends FileSystem {
 	@Override
 	public void close() throws IOException {
 		// TODO: Update manifest
-		originalFilesystem.close();
+		getOriginalFilesystem().close();
 	}
 
 	@Override
 	public Iterable<FileStore> getFileStores() {
 		if (wrappedFileStore == null) {
-			wrappedFileStore = new WrappedFileStore(originalFilesystem
+			wrappedFileStore = new WrappedFileStore(getOriginalFilesystem()
 					.getFileStores().iterator().next());
 		}
 		return Collections.singleton((FileStore) wrappedFileStore);
 	}
 
+	public FileSystem getOriginalFilesystem() {
+		return originalFilesystem;
+	}
+
 	@Override
 	public Path getPath(String first, String... more) {
-		Path origPath = originalFilesystem.getPath(first, more);
+		Path origPath = getOriginalFilesystem().getPath(first, more);
 		return toWrappedPath(origPath);
 	}
 
 	@Override
 	public PathMatcher getPathMatcher(final String syntaxAndPattern) {
 		return new PathMatcher() {
-			PathMatcher zipPathMatcher = originalFilesystem
+			PathMatcher zipPathMatcher = getOriginalFilesystem()
 					.getPathMatcher(syntaxAndPattern);
 
 			@Override
@@ -61,32 +65,32 @@ public class WrappedFileSystem extends FileSystem {
 
 	@Override
 	public Iterable<Path> getRootDirectories() {
-		return toWrappedPaths(originalFilesystem.getRootDirectories());
+		return toWrappedPaths(getOriginalFilesystem().getRootDirectories());
 	}
 
 	@Override
 	public String getSeparator() {
-		return originalFilesystem.getSeparator();
+		return getOriginalFilesystem().getSeparator();
 	}
 
 	@Override
 	public UserPrincipalLookupService getUserPrincipalLookupService() {
-		return originalFilesystem.getUserPrincipalLookupService();
+		return getOriginalFilesystem().getUserPrincipalLookupService();
 	}
 
 	@Override
 	public boolean isOpen() {
-		return originalFilesystem.isOpen();
+		return getOriginalFilesystem().isOpen();
 	}
 
 	@Override
 	public boolean isReadOnly() {
-		return originalFilesystem.isReadOnly();
+		return getOriginalFilesystem().isReadOnly();
 	}
 
 	@Override
 	public WatchService newWatchService() throws IOException {
-		return originalFilesystem.newWatchService();
+		return getOriginalFilesystem().newWatchService();
 	}
 
 	@Override
@@ -96,7 +100,7 @@ public class WrappedFileSystem extends FileSystem {
 
 	@Override
 	public Set<String> supportedFileAttributeViews() {
-		return originalFilesystem.supportedFileAttributeViews();
+		return getOriginalFilesystem().supportedFileAttributeViews();
 	}
 
 	protected WrappedPath toWrappedPath(Path origPath) {
