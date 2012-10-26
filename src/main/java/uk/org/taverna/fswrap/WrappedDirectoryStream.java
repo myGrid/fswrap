@@ -8,7 +8,6 @@ import java.util.Iterator;
 
 public class WrappedDirectoryStream implements DirectoryStream<Path> {
 
-	private WrappedPath dir;
 	private WrappedFileSystem fileSystem;
 	private DirectoryStream<Path> originalDirectoryStream;
 
@@ -16,7 +15,6 @@ public class WrappedDirectoryStream implements DirectoryStream<Path> {
 		if (! (dir instanceof WrappedPath)) {
 			throw new ProviderMismatchException("Wrong Path type " + dir.getClass());
 		}
-		this.dir = (WrappedPath) dir;
 		this.originalDirectoryStream = originalDirectoryStream;
 		this.fileSystem = (WrappedFileSystem) dir.getFileSystem();
 	}

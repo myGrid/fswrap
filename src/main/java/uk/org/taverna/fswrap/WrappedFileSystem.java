@@ -17,13 +17,11 @@ public class WrappedFileSystem extends FileSystem {
 
 	private FileSystem originalFilesystem;
 	private WrappedFileSystemProvider provider;
-	private URI uri;
 	private WrappedFileStore wrappedFileStore;
 
 	public WrappedFileSystem(WrappedFileSystemProvider provider, URI uri,
 			FileSystem originalFs) {
 		this.provider = provider;
-		this.uri = uri;
 		this.originalFilesystem = originalFs;
 	}
 
