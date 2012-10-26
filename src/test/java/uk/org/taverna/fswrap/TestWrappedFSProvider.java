@@ -47,10 +47,10 @@ public class TestWrappedFSProvider {
 	@Test
 	public void toWrappedUri() throws Exception {
 		WrappedFileSystemProvider fsp = new WrappedFileSystemProvider();
-		URI origUri = URI.create("file://test");
+		URI origUri = URI.create("ex://test");
 		URI wrappedUri = fsp.toWrappedUri(origUri);
 		assertEquals("wrap", wrappedUri.getScheme());
-		assertEquals("file://test", wrappedUri.getRawSchemeSpecificPart());
+		assertEquals("ex://test", wrappedUri.getRawSchemeSpecificPart());
 		assertEquals(origUri, fsp.toOrigUri(wrappedUri));
 	}
 	
