@@ -254,8 +254,13 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 	@Override
 	public WrappedFileSystem newFileSystem(URI uri, Map<String, ?> env)
 			throws IOException {
-		FileSystem zipFs = FileSystems.newFileSystem(toOrigUri(uri), env);
-		WrappedFileSystem fs = new WrappedFileSystem(this, uri, zipFs);
+		FileSystem originalFs;
+		try {		
+			originalFs = FileSystems.getFileSystem(toOrigUri(uri));
+		} catch (FileSystemNotFoundException ex) {
+			originalFs = FileSystems.newFileSystem(toOrigUri(uri), env);
+		}
+		WrappedFileSystem fs = new WrappedFileSystem(this, uri, originalFs);
 		cache.put(uri, new WeakReference<WrappedFileSystem>(fs));
 		listeners.newFileSystem(fs, env);
 		return fs;
@@ -299,8 +304,8 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 		}
 	}
 
-	protected URI toOrigUri(URI uri) {
-		return URI.create(uri.getRawPath());
+	protected URI toOrigUri(URI uri) {		
+		return URI.create(uri.getSchemeSpecificPart());
 	}
 
 	protected URI toWrappedUri(URI uri) {
