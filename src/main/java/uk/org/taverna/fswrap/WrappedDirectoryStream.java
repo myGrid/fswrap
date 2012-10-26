@@ -6,19 +6,19 @@ import java.nio.file.Path;
 import java.nio.file.ProviderMismatchException;
 import java.util.Iterator;
 
-public class UCFDirectoryStream implements DirectoryStream<Path> {
+public class WrappedDirectoryStream implements DirectoryStream<Path> {
 
 	private DirectoryStream<Path> originalDirectoryStream;
-	private UCFFileSystem fileSystem;
-	private UCFPath dir;
+	private WrappedFileSystem fileSystem;
+	private WrappedPath dir;
 
-	public UCFDirectoryStream(Path dir, DirectoryStream<Path> originalDirectoryStream) {
-		if (! (dir instanceof UCFPath)) {
+	public WrappedDirectoryStream(Path dir, DirectoryStream<Path> originalDirectoryStream) {
+		if (! (dir instanceof WrappedPath)) {
 			throw new ProviderMismatchException("Wrong Path type " + dir.getClass());
 		}
-		this.dir = (UCFPath) dir;
+		this.dir = (WrappedPath) dir;
 		this.originalDirectoryStream = originalDirectoryStream;
-		this.fileSystem = (UCFFileSystem) dir.getFileSystem();
+		this.fileSystem = (WrappedFileSystem) dir.getFileSystem();
 	}
 
 	@Override
@@ -37,7 +37,7 @@ public class UCFDirectoryStream implements DirectoryStream<Path> {
 
 			@Override
 			public Path next() {
-				return fileSystem.toUcfPath(origIt.next());
+				return fileSystem.toWrappedPath(origIt.next());
 			}
 
 			@Override

@@ -5,58 +5,58 @@ import java.nio.file.FileStore;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.FileStoreAttributeView;
 
-public class UCFFileStore extends FileStore {
+public class WrappedFileStore extends FileStore {
 
-	private FileStore zipFileStore;
+	private FileStore originalFileStore;
 
-	public UCFFileStore(FileStore zipFileStore) {
-		this.zipFileStore = zipFileStore;
+	public WrappedFileStore(FileStore zipFileStore) {
+		this.originalFileStore = zipFileStore;
 	}
 	
 	public String name() {
-		return zipFileStore.name();
+		return originalFileStore.name();
 	}
 
 	public int hashCode() {
-		return zipFileStore.hashCode();
+		return originalFileStore.hashCode();
 	}
 
 	public String type() {
-		return "ucf";
+		return "wrap";
 	}
 
 	public boolean isReadOnly() {
-		return zipFileStore.isReadOnly();
+		return originalFileStore.isReadOnly();
 	}
 
 	public long getTotalSpace() throws IOException {
-		return zipFileStore.getTotalSpace();
+		return originalFileStore.getTotalSpace();
 	}
 
 	public long getUsableSpace() throws IOException {
-		return zipFileStore.getUsableSpace();
+		return originalFileStore.getUsableSpace();
 	}
 
 	public long getUnallocatedSpace() throws IOException {
-		return zipFileStore.getUnallocatedSpace();
+		return originalFileStore.getUnallocatedSpace();
 	}
 
 	public boolean supportsFileAttributeView(
 			Class<? extends FileAttributeView> type) {
-		return zipFileStore.supportsFileAttributeView(type);
+		return originalFileStore.supportsFileAttributeView(type);
 	}
 
 	public boolean supportsFileAttributeView(String name) {
-		return zipFileStore.supportsFileAttributeView(name);
+		return originalFileStore.supportsFileAttributeView(name);
 	}
 
 	public <V extends FileStoreAttributeView> V getFileStoreAttributeView(
 			Class<V> type) {
-		return zipFileStore.getFileStoreAttributeView(type);
+		return originalFileStore.getFileStoreAttributeView(type);
 	}
 
 	public Object getAttribute(String attribute) throws IOException {
-		return zipFileStore.getAttribute(attribute);
+		return originalFileStore.getAttribute(attribute);
 	}
 
 

@@ -30,14 +30,12 @@ import java.util.Map;
 import java.util.Set;
 
 
-public class UCFFileSystemProvider extends FileSystemProvider {
+public class WrappedFileSystemProvider extends FileSystemProvider {
 
-	private static final String CREATE = "create";
-	private static final String MIMETYPE = "mimetype";
 	private static final String JAR = "jar";
-	private static final String UCF = "ucf";
-	private Map<URI, WeakReference<UCFFileSystem>> cache = new HashMap<URI, WeakReference<UCFFileSystem>>();
-	private FileSystemProvider zipProvider;
+	private static final String WRAP = "wrap";
+	private Map<URI, WeakReference<WrappedFileSystem>> cache = new HashMap<URI, WeakReference<WrappedFileSystem>>();
+	private FileSystemProvider originalProvider;
 	private Listeners listeners = new Listeners();
 
 	public static class Listeners implements FileSystemEventListener,
@@ -65,7 +63,7 @@ public class UCFFileSystemProvider extends FileSystemProvider {
 		}
 		
 		@Override
-		public void newFileSystem(UCFFileSystem fs, Map<String, ?> env) {
+		public void newFileSystem(WrappedFileSystem fs, Map<String, ?> env) {
 			for (FileSystemEventListener l : this) {
 				l.newFileSystem(fs, env);
 			}
@@ -131,20 +129,15 @@ public class UCFFileSystemProvider extends FileSystemProvider {
 	
 	@Override
 	public String getScheme() {
-		return UCF;
+		return WRAP;
 	}
 
 	@Override
-	public UCFFileSystem newFileSystem(URI uri, Map<String, ?> env)
+	public WrappedFileSystem newFileSystem(URI uri, Map<String, ?> env)
 			throws IOException {
-		FileSystem zipFs = FileSystems.newFileSystem(toZipUri(uri), env);
-		String mimeType = (String) env.get(MIMETYPE);
-		if (mimeType == null && env.containsKey(CREATE)) {
-			throw new IllegalArgumentException(String.format(
-					"Missing required env '%s' with create", MIMETYPE));
-		}
-		UCFFileSystem fs = new UCFFileSystem(this, uri, mimeType, zipFs);
-		cache.put(uri, new WeakReference<UCFFileSystem>(fs));
+		FileSystem zipFs = FileSystems.newFileSystem(toOrigUri(uri), env);
+		WrappedFileSystem fs = new WrappedFileSystem(this, uri, zipFs);
+		cache.put(uri, new WeakReference<WrappedFileSystem>(fs));
 		listeners.newFileSystem(fs, env);
 		return fs;
 	}
@@ -157,33 +150,33 @@ public class UCFFileSystemProvider extends FileSystemProvider {
 		}		
 	}
 	
-	protected URI toZipUri(URI uri) {
+	protected URI toOrigUri(URI uri) {
 		return changeUriScheme(uri, JAR);
 	}
 
-	protected URI toUcfUri(URI uri) {
-		return changeUriScheme(uri, UCF);
+	protected URI toWrappedUri(URI uri) {
+		return changeUriScheme(uri, WRAP);
 	}
 	
-	protected FileSystemProvider getZipProvider() {
-		if (zipProvider == null) {
+	protected FileSystemProvider getOriginalProvider() {
+		if (originalProvider == null) {
 			for (FileSystemProvider provider : FileSystemProvider
 					.installedProviders()) {
 				if (provider.getScheme().equals(JAR)) {
-					zipProvider = provider;
+					originalProvider = provider;
 				}
 			}
 		}
-		return zipProvider;
+		return originalProvider;
 	}
 
 	@Override
-	public UCFFileSystem getFileSystem(URI uri) {
-		WeakReference<UCFFileSystem> ref = cache.get(uri);
+	public WrappedFileSystem getFileSystem(URI uri) {
+		WeakReference<WrappedFileSystem> ref = cache.get(uri);
 		if (ref == null) {
 			throw new FileSystemNotFoundException();
 		}
-		UCFFileSystem fs = ref.get();
+		WrappedFileSystem fs = ref.get();
 		if (fs == null) {
 			cache.remove(uri);			
 			throw new FileSystemNotFoundException();
@@ -192,22 +185,22 @@ public class UCFFileSystemProvider extends FileSystemProvider {
 	}
 
 	@Override
-	public UCFPath getPath(URI uri) {
-		Path zipPath = getZipProvider().getPath(toZipUri(uri));		
+	public WrappedPath getPath(URI uri) {
+		Path originalPath = getOriginalProvider().getPath(toOrigUri(uri));		
 		URI base;
 		try {
-			base = new URI(UCF, uri.getSchemeSpecificPart().replaceAll("!.*", ""), null);
+			base = new URI(WRAP, uri.getSchemeSpecificPart().replaceAll("!.*", ""), null);
 		} catch (URISyntaxException e) {
 			throw new IllegalArgumentException("Invalid URI " + uri);
 		}
-		return getFileSystem(base).toUcfPath(zipPath);
+		return getFileSystem(base).toWrappedPath(originalPath);
 	}
 
 	@Override
 	public SeekableByteChannel newByteChannel(Path path,
 			Set<? extends OpenOption> options, FileAttribute<?>... attrs)
 			throws IOException {
-		SeekableByteChannel byteChannel = getZipProvider().newByteChannel(toZipPath(path), options, attrs);
+		SeekableByteChannel byteChannel = getOriginalProvider().newByteChannel(toOriginalPath(path), options, attrs);
 		listeners.newByteChannel(path, options, attrs, byteChannel);
 		return byteChannel;
 	}
@@ -215,75 +208,75 @@ public class UCFFileSystemProvider extends FileSystemProvider {
 	@Override
 	public DirectoryStream<Path> newDirectoryStream(Path dir,
 			Filter<? super Path> filter) throws IOException {
-		return new UCFDirectoryStream(dir, getZipProvider().newDirectoryStream(toZipPath(dir), filter));
+		return new WrappedDirectoryStream(dir, getOriginalProvider().newDirectoryStream(toOriginalPath(dir), filter));
 	}
 
 	@Override
 	public void createDirectory(Path dir, FileAttribute<?>... attrs)
 			throws IOException {
-		getZipProvider().createDirectory(toZipPath(dir), attrs);
+		getOriginalProvider().createDirectory(toOriginalPath(dir), attrs);
 		listeners.createdDirectory(dir, attrs);
 	}
 
 	@Override
 	public void delete(Path path) throws IOException {
-		getZipProvider().delete(toZipPath(path));
+		getOriginalProvider().delete(toOriginalPath(path));
 		listeners.deleted(path);
 	}
 
 	@Override
 	public void copy(Path source, Path target, CopyOption... options)
 			throws IOException {
-		getZipProvider().copy(toZipPath(source), toZipPath(target), options);		
+		getOriginalProvider().copy(toOriginalPath(source), toOriginalPath(target), options);		
 		listeners.copied(source, target, options);
 	}
 
 	@Override
 	public void move(Path source, Path target, CopyOption... options)
 			throws IOException {
-		getZipProvider().move(toZipPath(source), toZipPath(target), options);
+		getOriginalProvider().move(toOriginalPath(source), toOriginalPath(target), options);
 		listeners.moved(source, target, options);
 	}
 
 	@Override
 	public boolean isSameFile(Path path, Path path2) throws IOException {
-		return getZipProvider().isSameFile(toZipPath(path), toZipPath(path2));
+		return getOriginalProvider().isSameFile(toOriginalPath(path), toOriginalPath(path2));
 	}
 
 	@Override
 	public boolean isHidden(Path path) throws IOException {
-		return getZipProvider().isHidden(toZipPath(path));
+		return getOriginalProvider().isHidden(toOriginalPath(path));
 	}
 
 	@Override
 	public FileStore getFileStore(Path path) throws IOException {
-		return new UCFFileStore(getZipProvider().getFileStore(toZipPath(path)));
+		return new WrappedFileStore(getOriginalProvider().getFileStore(toOriginalPath(path)));
 	}
 
 	@Override
 	public void checkAccess(Path path, AccessMode... modes) throws IOException {
-		zipProvider.checkAccess(toZipPath(path), modes);
+		originalProvider.checkAccess(toOriginalPath(path), modes);
 	}
 
 	@Override
 	public <V extends FileAttributeView> V getFileAttributeView(Path path,
 			Class<V> type, LinkOption... options) {
-		return getZipProvider().getFileAttributeView(toZipPath(path), type, options);
+		return getOriginalProvider().getFileAttributeView(toOriginalPath(path), type, options);
 	}
 
 	@Override
 	public <A extends BasicFileAttributes> A readAttributes(Path path,
 			Class<A> type, LinkOption... options) throws IOException {
-		return getZipProvider().readAttributes(toZipPath(path), type, options);
+		return getOriginalProvider().readAttributes(toOriginalPath(path), type, options);
 	}
 	
-	protected Path toZipPath(Path other) {
+	protected Path toOriginalPath(Path other) {
 		if (other == null) {
 			return null;
 		}
-		if (other instanceof UCFPath) {
-			UCFPath ucfPath = (UCFPath) other;
-			return ucfPath.zipPath;
+		if (other instanceof WrappedPath) {
+			WrappedPath wrappedPath = (WrappedPath) other;
+			return wrappedPath.originalPath;
 		} else {
 			throw new ProviderMismatchException("Wrong Path type " + other.getClass());
 		}
@@ -292,13 +285,13 @@ public class UCFFileSystemProvider extends FileSystemProvider {
 	@Override
 	public Map<String, Object> readAttributes(Path path, String attributes,
 			LinkOption... options) throws IOException {
-		return getZipProvider().readAttributes(toZipPath(path), attributes, options);
+		return getOriginalProvider().readAttributes(toOriginalPath(path), attributes, options);
 	}
 
 	@Override
 	public void setAttribute(Path path, String attribute, Object value,
 			LinkOption... options) throws IOException {
-		setAttribute(toZipPath(path), attribute, value, options);
+		setAttribute(toOriginalPath(path), attribute, value, options);
 		listeners.setAttribute(path, attribute, value, options);
 	}
 

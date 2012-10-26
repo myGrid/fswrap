@@ -12,7 +12,7 @@ import java.util.Set;
 
 public interface FileSystemEventListener extends EventListener {
 
-	void newFileSystem(UCFFileSystem fs, Map<String, ?> env);
+	void newFileSystem(WrappedFileSystem fs, Map<String, ?> env);
 
 	void newByteChannel(Path path, Set<? extends OpenOption> options,
 			FileAttribute<?>[] attrs, SeekableByteChannel byteChannel);
