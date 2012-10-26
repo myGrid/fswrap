@@ -7,7 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 
-public class DeletorVisitor extends SimpleFileVisitor<Path> {
+public class DeleterVisitor extends SimpleFileVisitor<Path> {
 	// Implemented as in http://stackoverflow.com/a/8685959
 	@Override
 	public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)

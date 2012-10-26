@@ -36,7 +36,7 @@ public class TestWrappedFS {
 	@After
 	public void deleteTempFolder() throws IOException {
 		if (DELETE) {
-			Files.walkFileTree(origTemp, new DeletorVisitor());
+			Files.walkFileTree(origTemp, new DeleterVisitor());
 		} else {
 			System.out.println(origTemp);
 		}
