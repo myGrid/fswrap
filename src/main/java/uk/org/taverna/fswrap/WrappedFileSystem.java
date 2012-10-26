@@ -18,17 +18,23 @@ public class WrappedFileSystem extends FileSystem {
 	private final FileSystem originalFilesystem;
 	private final WrappedFileSystemProvider provider;
 	private WrappedFileStore wrappedFileStore;
+	private URI uri;
+	private boolean closeOriginalOnClose;
 
 	public WrappedFileSystem(WrappedFileSystemProvider provider, URI uri,
-			FileSystem originalFs) {
+			FileSystem originalFs, boolean closeOriginalOnClose) {
 		this.provider = provider;
 		this.originalFilesystem = originalFs;
+		this.uri = uri;
+		this.closeOriginalOnClose = closeOriginalOnClose;
 	}
 
 	@Override
 	public void close() throws IOException {
-		// TODO: Update manifest
-		getOriginalFilesystem().close();
+		if (closeOriginalOnClose) {
+			originalFilesystem.close();
+		}
+		provider().closeFilesystem(this);	
 	}
 
 	@Override
@@ -117,6 +123,10 @@ public class WrappedFileSystem extends FileSystem {
 			wrapped.add(toWrappedPath(orig));
 		}
 		return wrapped;
+	}
+
+	public URI getUri() {
+		return uri;
 	}
 
 }
