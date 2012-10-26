@@ -12,7 +12,7 @@ public class WrappedFileStore extends FileStore {
 	public WrappedFileStore(FileStore zipFileStore) {
 		this.originalFileStore = zipFileStore;
 	}
-	
+
 	public Object getAttribute(String attribute) throws IOException {
 		return originalFileStore.getAttribute(attribute);
 	}
@@ -58,6 +58,5 @@ public class WrappedFileStore extends FileStore {
 	public String type() {
 		return "wrap";
 	}
-
 
 }

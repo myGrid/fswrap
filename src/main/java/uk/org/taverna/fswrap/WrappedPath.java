@@ -11,7 +11,6 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.Iterator;
 
-
 public class WrappedPath implements Path {
 
 	protected Path originalPath;
@@ -23,7 +22,8 @@ public class WrappedPath implements Path {
 	}
 
 	public int compareTo(Path other) {
-		return originalPath.compareTo(wrappedFileSystem.provider().toOriginalPath(other));
+		return originalPath.compareTo(wrappedFileSystem.provider()
+				.toOriginalPath(other));
 	}
 
 	public boolean endsWith(Path other) {
@@ -35,10 +35,11 @@ public class WrappedPath implements Path {
 	}
 
 	public boolean equals(Object other) {
-		if (! (other instanceof Path)) {
+		if (!(other instanceof Path)) {
 			return false;
 		}
-		return originalPath.equals(wrappedFileSystem.provider().toOriginalPath((Path) other));
+		return originalPath.equals(wrappedFileSystem.provider().toOriginalPath(
+				(Path) other));
 	}
 
 	public WrappedPath getFileName() {
@@ -97,7 +98,8 @@ public class WrappedPath implements Path {
 	}
 
 	public WrappedPath resolve(Path other) {
-		return wrappedFileSystem.toWrappedPath(originalPath.resolve(wrappedFileSystem.provider().toOriginalPath(other)));
+		return wrappedFileSystem.toWrappedPath(originalPath
+				.resolve(wrappedFileSystem.provider().toOriginalPath(other)));
 	}
 
 	public WrappedPath resolve(String other) {
@@ -105,15 +107,18 @@ public class WrappedPath implements Path {
 	}
 
 	public WrappedPath resolveSibling(Path other) {
-		return wrappedFileSystem.toWrappedPath(originalPath.resolveSibling(other));
+		return wrappedFileSystem.toWrappedPath(originalPath
+				.resolveSibling(other));
 	}
 
 	public WrappedPath resolveSibling(String other) {
-		return wrappedFileSystem.toWrappedPath(originalPath.resolveSibling(other));
+		return wrappedFileSystem.toWrappedPath(originalPath
+				.resolveSibling(other));
 	}
 
 	public boolean startsWith(Path other) {
-		return originalPath.startsWith(wrappedFileSystem.provider().toOriginalPath(other));
+		return originalPath.startsWith(wrappedFileSystem.provider()
+				.toOriginalPath(other));
 	}
 
 	public boolean startsWith(String other) {
@@ -121,7 +126,8 @@ public class WrappedPath implements Path {
 	}
 
 	public WrappedPath subpath(int beginIndex, int endIndex) {
-		return wrappedFileSystem.toWrappedPath(originalPath.subpath(beginIndex, endIndex));
+		return wrappedFileSystem.toWrappedPath(originalPath.subpath(beginIndex,
+				endIndex));
 	}
 
 	public WrappedPath toAbsolutePath() {
@@ -132,19 +138,17 @@ public class WrappedPath implements Path {
 		return originalPath.toFile();
 	}
 
-	
 	public WrappedPath toRealPath(LinkOption... options) throws IOException {
-		return wrappedFileSystem.toWrappedPath(originalPath.toRealPath(options));
+		return wrappedFileSystem
+				.toWrappedPath(originalPath.toRealPath(options));
 	}
 
 	public String toString() {
 		return originalPath.toString();
 	}
-		
+
 	public URI toUri() {
 		return wrappedFileSystem.provider().toWrappedUri(originalPath.toUri());
 	}
-
-
 
 }

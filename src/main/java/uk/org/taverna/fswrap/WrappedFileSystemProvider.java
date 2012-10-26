@@ -31,42 +31,41 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-
 public class WrappedFileSystemProvider extends FileSystemProvider {
 
 	public static class Listeners implements FileSystemEventListener,
-	Iterable<FileSystemEventListener> {
-		
+			Iterable<FileSystemEventListener> {
+
 		Set<FileSystemEventListener> registered = new LinkedHashSet<FileSystemEventListener>();
-		
+
 		public synchronized void add(FileSystemEventListener l) {
 			registered.add(l);
 		}
-		
+
 		public synchronized List<FileSystemEventListener> all() {
 			// Make a thread-safe snapshot
 			return new ArrayList<FileSystemEventListener>(registered);
 		}
-		
+
 		@Override
 		public void copied(Path source, Path target, CopyOption[] options) {
 			for (FileSystemEventListener l : this) {
 				l.copied(source, target, options);
-			}			
+			}
 		}
-		
+
 		@Override
 		public void createdDirectory(Path dir, FileAttribute<?>[] attrs) {
 			for (FileSystemEventListener l : this) {
 				l.createdDirectory(dir, attrs);
 			}
 		}
-		
+
 		@Override
 		public void deleted(Path path) {
 			for (FileSystemEventListener l : this) {
 				l.deleted(path);
-			}			
+			}
 		}
 
 		@Override
@@ -79,7 +78,7 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 		public void moved(Path source, Path target, CopyOption[] options) {
 			for (FileSystemEventListener l : this) {
 				l.moved(source, target, options);
-			}			
+			}
 		}
 
 		@Override
@@ -88,7 +87,7 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 				SeekableByteChannel byteChannel) {
 			for (FileSystemEventListener l : this) {
 				l.newByteChannel(path, options, attrs, byteChannel);
-			}			
+			}
 		}
 
 		@Override
@@ -111,35 +110,39 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 		}
 
 	}
+
 	private static final String WRAP = "wrap";
-	private Map<URI, WeakReference<WrappedFileSystem>> cache = Collections.synchronizedMap(new HashMap<URI, WeakReference<WrappedFileSystem>>());
+	private Map<URI, WeakReference<WrappedFileSystem>> cache = Collections
+			.synchronizedMap(new HashMap<URI, WeakReference<WrappedFileSystem>>());
 	private Listeners listeners = new Listeners();
 	private FileSystemProvider originalProvider;
 
 	private Map<FileSystem, WrappedFileSystem> origToWrappedFs = new WeakHashMap<>();
-	
+
 	public void addFileSystemEventListener(FileSystemEventListener listener) {
 		listeners.registered.add(listener);
 	}
+
 	@Override
 	public void checkAccess(Path path, AccessMode... modes) throws IOException {
 		originalProvider.checkAccess(toOriginalPath(path), modes);
 	}
-	
+
 	@Override
 	public void copy(Path source, Path target, CopyOption... options)
 			throws IOException {
-		getOriginalProvider(source).copy(toOriginalPath(source), toOriginalPath(target), options);		
+		getOriginalProvider(source).copy(toOriginalPath(source),
+				toOriginalPath(target), options);
 		listeners.copied(source, target, options);
 	}
-	
+
 	@Override
 	public void createDirectory(Path dir, FileAttribute<?>... attrs)
 			throws IOException {
 		getOriginalProvider(dir).createDirectory(toOriginalPath(dir), attrs);
 		listeners.createdDirectory(dir, attrs);
 	}
-	
+
 	@Override
 	public void delete(Path path) throws IOException {
 		getOriginalProvider(path).delete(toOriginalPath(path));
@@ -149,13 +152,14 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 	@Override
 	public <V extends FileAttributeView> V getFileAttributeView(Path path,
 			Class<V> type, LinkOption... options) {
-		return getOriginalProvider(path).getFileAttributeView(toOriginalPath(path), type, options);
+		return getOriginalProvider(path).getFileAttributeView(
+				toOriginalPath(path), type, options);
 	}
 
-	
 	@Override
 	public FileStore getFileStore(Path path) throws IOException {
-		return new WrappedFileStore(getOriginalProvider(path).getFileStore(toOriginalPath(path)));
+		return new WrappedFileStore(getOriginalProvider(path).getFileStore(
+				toOriginalPath(path)));
 	}
 
 	@Override
@@ -166,17 +170,18 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 		}
 		WrappedFileSystem fs = ref.get();
 		if (fs == null) {
-			cache.remove(uri);			
+			cache.remove(uri);
 			throw new FileSystemNotFoundException();
 		}
 		return fs;
 	}
-	
+
 	public List<FileSystemEventListener> getFileSystemEventListeners() {
 		return listeners.all();
 	}
 
-	protected WrappedFileSystem getFileSystemWrapping(FileSystem originalFileSystem) {
+	protected WrappedFileSystem getFileSystemWrapping(
+			FileSystem originalFileSystem) {
 		return origToWrappedFs.get(originalFileSystem);
 	}
 
@@ -184,7 +189,7 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 		Path p = toOriginalPath(path);
 		return getOriginalProvider(p.toUri().getScheme());
 	}
-	
+
 	protected FileSystemProvider getOriginalProvider(String originalScheme) {
 		for (FileSystemProvider provider : FileSystemProvider
 				.installedProviders()) {
@@ -192,16 +197,19 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 				return provider;
 			}
 		}
-		throw new IllegalArgumentException("No provider for scheme " + originalScheme);
+		throw new IllegalArgumentException("No provider for scheme "
+				+ originalScheme);
 	}
 
 	@Override
-	public WrappedPath getPath(URI uri) {		
-		Path originalPath = getOriginalProvider(uri.getScheme()).getPath(toOrigUri(uri));
-		WrappedFileSystem fs = getFileSystemWrapping(originalPath.getFileSystem());
+	public WrappedPath getPath(URI uri) {
+		Path originalPath = getOriginalProvider(uri.getScheme()).getPath(
+				toOrigUri(uri));
+		WrappedFileSystem fs = getFileSystemWrapping(originalPath
+				.getFileSystem());
 		return fs.toWrappedPath(originalPath);
 	}
-	
+
 	@Override
 	public String getScheme() {
 		return WRAP;
@@ -214,13 +222,15 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 
 	@Override
 	public boolean isSameFile(Path path, Path path2) throws IOException {
-		return getOriginalProvider(path).isSameFile(toOriginalPath(path), toOriginalPath(path2));
+		return getOriginalProvider(path).isSameFile(toOriginalPath(path),
+				toOriginalPath(path2));
 	}
 
 	@Override
 	public void move(Path source, Path target, CopyOption... options)
 			throws IOException {
-		getOriginalProvider(source).move(toOriginalPath(source), toOriginalPath(target), options);
+		getOriginalProvider(source).move(toOriginalPath(source),
+				toOriginalPath(target), options);
 		listeners.moved(source, target, options);
 	}
 
@@ -228,7 +238,8 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 	public SeekableByteChannel newByteChannel(Path path,
 			Set<? extends OpenOption> options, FileAttribute<?>... attrs)
 			throws IOException {
-		SeekableByteChannel byteChannel = getOriginalProvider(path).newByteChannel(toOriginalPath(path), options, attrs);
+		SeekableByteChannel byteChannel = getOriginalProvider(path)
+				.newByteChannel(toOriginalPath(path), options, attrs);
 		listeners.newByteChannel(path, options, attrs, byteChannel);
 		return byteChannel;
 	}
@@ -236,7 +247,8 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 	@Override
 	public DirectoryStream<Path> newDirectoryStream(Path dir,
 			Filter<? super Path> filter) throws IOException {
-		return new WrappedDirectoryStream(dir, getOriginalProvider(dir).newDirectoryStream(toOriginalPath(dir), filter));
+		return new WrappedDirectoryStream(dir, getOriginalProvider(dir)
+				.newDirectoryStream(toOriginalPath(dir), filter));
 	}
 
 	@Override
@@ -252,13 +264,15 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 	@Override
 	public <A extends BasicFileAttributes> A readAttributes(Path path,
 			Class<A> type, LinkOption... options) throws IOException {
-		return getOriginalProvider(path).readAttributes(toOriginalPath(path), type, options);
+		return getOriginalProvider(path).readAttributes(toOriginalPath(path),
+				type, options);
 	}
 
 	@Override
 	public Map<String, Object> readAttributes(Path path, String attributes,
 			LinkOption... options) throws IOException {
-		return getOriginalProvider(path).readAttributes(toOriginalPath(path), attributes, options);
+		return getOriginalProvider(path).readAttributes(toOriginalPath(path),
+				attributes, options);
 	}
 
 	public void removeFileSystemEventListener(FileSystemEventListener listener) {
@@ -271,7 +285,7 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 		setAttribute(toOriginalPath(path), attribute, value, options);
 		listeners.setAttribute(path, attribute, value, options);
 	}
-	
+
 	protected Path toOriginalPath(Path other) {
 		if (other == null) {
 			return null;
@@ -280,7 +294,8 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 			WrappedPath wrappedPath = (WrappedPath) other;
 			return wrappedPath.originalPath;
 		} else {
-			throw new ProviderMismatchException("Wrong Path type " + other.getClass());
+			throw new ProviderMismatchException("Wrong Path type "
+					+ other.getClass());
 		}
 	}
 
@@ -294,7 +309,7 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 			return new URI(WRAP, uri.toASCIIString(), null);
 		} catch (URISyntaxException e) {
 			throw new IllegalStateException("Could not transform URI " + uri);
-		}	
+		}
 	}
 
 }

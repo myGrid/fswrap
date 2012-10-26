@@ -34,9 +34,10 @@ public class WrappedFileSystem extends FileSystem {
 	@Override
 	public Iterable<FileStore> getFileStores() {
 		if (wrappedFileStore == null) {
-			wrappedFileStore = new WrappedFileStore(originalFilesystem.getFileStores().iterator().next());
+			wrappedFileStore = new WrappedFileStore(originalFilesystem
+					.getFileStores().iterator().next());
 		}
-		return Collections.singleton((FileStore)wrappedFileStore);
+		return Collections.singleton((FileStore) wrappedFileStore);
 	}
 
 	@Override
@@ -47,8 +48,10 @@ public class WrappedFileSystem extends FileSystem {
 
 	@Override
 	public PathMatcher getPathMatcher(final String syntaxAndPattern) {
-		return new PathMatcher(){
-			PathMatcher zipPathMatcher = originalFilesystem.getPathMatcher(syntaxAndPattern);
+		return new PathMatcher() {
+			PathMatcher zipPathMatcher = originalFilesystem
+					.getPathMatcher(syntaxAndPattern);
+
 			@Override
 			public boolean matches(Path path) {
 				return zipPathMatcher.matches(provider.toOriginalPath(path));
@@ -85,11 +88,12 @@ public class WrappedFileSystem extends FileSystem {
 	public WatchService newWatchService() throws IOException {
 		return originalFilesystem.newWatchService();
 	}
+
 	@Override
 	public WrappedFileSystemProvider provider() {
 		return provider;
 	}
-	
+
 	@Override
 	public Set<String> supportedFileAttributeViews() {
 		return originalFilesystem.supportedFileAttributeViews();
@@ -110,6 +114,5 @@ public class WrappedFileSystem extends FileSystem {
 		}
 		return wrapped;
 	}
-
 
 }

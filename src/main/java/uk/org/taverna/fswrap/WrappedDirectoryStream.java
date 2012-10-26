@@ -11,9 +11,11 @@ public class WrappedDirectoryStream implements DirectoryStream<Path> {
 	private WrappedFileSystem fileSystem;
 	private DirectoryStream<Path> originalDirectoryStream;
 
-	public WrappedDirectoryStream(Path dir, DirectoryStream<Path> originalDirectoryStream) {
-		if (! (dir instanceof WrappedPath)) {
-			throw new ProviderMismatchException("Wrong Path type " + dir.getClass());
+	public WrappedDirectoryStream(Path dir,
+			DirectoryStream<Path> originalDirectoryStream) {
+		if (!(dir instanceof WrappedPath)) {
+			throw new ProviderMismatchException("Wrong Path type "
+					+ dir.getClass());
 		}
 		this.originalDirectoryStream = originalDirectoryStream;
 		this.fileSystem = (WrappedFileSystem) dir.getFileSystem();
@@ -42,7 +44,7 @@ public class WrappedDirectoryStream implements DirectoryStream<Path> {
 			public void remove() {
 				origIt.remove();
 			}
-			
+
 		};
 	}
 
