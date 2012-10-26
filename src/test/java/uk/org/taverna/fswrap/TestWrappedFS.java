@@ -134,6 +134,56 @@ public class TestWrappedFS {
 			assertEquals(lazyDog, line);
 		}
 	}
+
+	@Test
+	public void copy() throws IOException {
+		
+		String fromPath = "from.txt";
+		Path origFrom = origTemp.resolve(fromPath);
+		Path from = temp.resolve(fromPath);
+		assertTrue(Files.notExists(origFrom));
+
+		from = Files.createFile(temp.resolve(fromPath));
+		assertTrue(Files.isRegularFile(from));
+		
+		String toPath = "to.txt";
+		Path origTo = origTemp.resolve(toPath);
+		Path to = temp.resolve(toPath);
+		assertTrue(Files.notExists(origTo));
+		
+		Files.copy(from, to);
+		
+		assertTrue(Files.isRegularFile(from));
+		assertTrue(Files.isRegularFile(origFrom));
+		assertTrue(Files.isRegularFile(to));
+		assertTrue(Files.isRegularFile(origTo));
+
+		
+	}
+	
+	@Test
+	public void move() throws IOException {
+		String fromPath = "from.txt";
+		Path origFrom = origTemp.resolve(fromPath);
+		Path from = temp.resolve(fromPath);
+		assertTrue(Files.notExists(origFrom));
+
+		from = Files.createFile(temp.resolve(fromPath));
+		assertTrue(Files.isRegularFile(from));
+		
+		String toPath = "to.txt";
+		Path origTo = origTemp.resolve(toPath);
+		Path to = temp.resolve(toPath);
+		assertTrue(Files.notExists(origTo));
+		
+		Files.move(from, to);
+		
+		assertFalse(Files.isRegularFile(from));
+		assertFalse(Files.isRegularFile(origFrom));
+		assertTrue(Files.isRegularFile(to));
+		assertTrue(Files.isRegularFile(origTo));
+
+	}
 	
 	
 }
