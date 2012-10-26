@@ -11,6 +11,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.FileSystems;
 import java.nio.file.LinkOption;
@@ -33,10 +34,38 @@ import java.util.WeakHashMap;
 
 public class WrappedFileSystemProvider extends FileSystemProvider {
 
+	public static final String SCHEME = "wrap";
+
+	/**
+	 * A FileSystemAlreadyExistsException which keeps a reference to the
+	 * existing FileSystem.
+	 * <p>
+	 * This is useful because the {@link WrappedFileSystemProvider} keeps the
+	 * existing file systems as weak references; this exception (thrown by
+	 * {@link WrappedFileSystemProvider#newFileSystem(URI, Map)}) would ensure
+	 * that the file system is not garbage collected until the handling of the
+	 * exception has been finished.
+	 * 
+	 */
+	public static final class FileSystemAlreadyExistsExceptionWithRef extends
+			FileSystemAlreadyExistsException {
+		private final FileSystem fs;
+
+		private FileSystemAlreadyExistsExceptionWithRef(String msg,
+				FileSystem fs) {
+			super(msg);
+			this.fs = fs;
+		}
+
+		public FileSystem getExistingFileSystem() {
+			return fs;
+		}
+	}
+
 	public static class Listeners implements FileSystemEventListener,
 			Iterable<FileSystemEventListener> {
 
-		Set<FileSystemEventListener> registered = new LinkedHashSet<FileSystemEventListener>();
+		private Set<FileSystemEventListener> registered = new LinkedHashSet<FileSystemEventListener>();
 
 		public synchronized void add(FileSystemEventListener l) {
 			registered.add(l);
@@ -111,21 +140,20 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 
 	}
 
-	private static final String WRAP = "wrap";
 	private Map<URI, WeakReference<WrappedFileSystem>> cache = Collections
 			.synchronizedMap(new HashMap<URI, WeakReference<WrappedFileSystem>>());
 	private Listeners listeners = new Listeners();
-	private FileSystemProvider originalProvider;
 
-	private Map<FileSystem, WrappedFileSystem> origToWrappedFs = new WeakHashMap<>();
+	private Map<FileSystem, WrappedFileSystem> origToWrappedFs = Collections.synchronizedMap(
+			new WeakHashMap<FileSystem, WrappedFileSystem>());
 
 	public void addFileSystemEventListener(FileSystemEventListener listener) {
-		listeners.registered.add(listener);
+		listeners.add(listener);
 	}
 
 	@Override
 	public void checkAccess(Path path, AccessMode... modes) throws IOException {
-		originalProvider.checkAccess(toOriginalPath(path), modes);
+		getOriginalProvider(path).checkAccess(toOriginalPath(path), modes);
 	}
 
 	@Override
@@ -212,7 +240,7 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 
 	@Override
 	public String getScheme() {
-		return WRAP;
+		return SCHEME;
 	}
 
 	@Override
@@ -255,13 +283,23 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 	public WrappedFileSystem newFileSystem(URI uri, Map<String, ?> env)
 			throws IOException {
 		FileSystem originalFs;
-		try {		
+		boolean closeOriginal = false;
+		try {
 			originalFs = FileSystems.getFileSystem(toOrigUri(uri));
 		} catch (FileSystemNotFoundException ex) {
 			originalFs = FileSystems.newFileSystem(toOrigUri(uri), env);
+			closeOriginal = true;
 		}
-		WrappedFileSystem fs = new WrappedFileSystem(this, uri, originalFs);
+		if (cache.containsKey(uri)) {
+			final WrappedFileSystem fs = cache.get(uri).get();
+			if (fs != null) {
+			}
+			throw new FileSystemAlreadyExistsExceptionWithRef(
+					"File system exists for " + uri, fs);
+		}
+		WrappedFileSystem fs = new WrappedFileSystem(this, uri, originalFs, closeOriginal);
 		cache.put(uri, new WeakReference<WrappedFileSystem>(fs));
+		origToWrappedFs.put(originalFs, fs);
 		listeners.newFileSystem(fs, env);
 		return fs;
 	}
@@ -281,7 +319,7 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 	}
 
 	public void removeFileSystemEventListener(FileSystemEventListener listener) {
-		listeners.registered.remove(listener);
+		listeners.remove(listener);
 	}
 
 	@Override
@@ -304,17 +342,40 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 		}
 	}
 
-	protected URI toOrigUri(URI uri) {		
+	protected URI toOrigUri(URI uri) {
 		return URI.create(uri.getSchemeSpecificPart());
 	}
 
 	protected URI toWrappedUri(URI uri) {
 		try {
 			// TODO: Check that #fragment is preserved
-			return new URI(WRAP, uri.toASCIIString(), null);
+			return new URI(SCHEME, uri.toASCIIString(), null);
 		} catch (URISyntaxException e) {
 			throw new IllegalStateException("Could not transform URI " + uri);
 		}
+	}
+
+	public static WrappedFileSystem wrapDefaultFs() {
+		URI uri;
+		try {
+			uri = new URI(WrappedFileSystemProvider.SCHEME, "file:///", null);
+		} catch (URISyntaxException e1) {
+			throw new RuntimeException("Can't make URI", e1);
+		}
+		Map<String, ?> env = Collections.emptyMap();
+		try {
+			return (WrappedFileSystem) FileSystems.newFileSystem(uri, env);
+		} catch (FileSystemAlreadyExistsExceptionWithRef e) {
+			return (WrappedFileSystem) e.getExistingFileSystem();
+		} catch (IOException e) {
+			throw new RuntimeException("Can't find default file system for "
+					+ uri);
+		}
+	}
+
+	public void closeFilesystem(WrappedFileSystem wrappedFileSystem) {
+		cache.remove(wrappedFileSystem.getUri());
+		origToWrappedFs.remove(wrappedFileSystem.getOriginalFilesystem());
 	}
 
 }
