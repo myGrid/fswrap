@@ -3,10 +3,12 @@ fswrap
 
 (c) 2012 University of Manchester, UK <support@mygrid.org.uk>
 
-Licensed under the [GNU Lesser General Public License (LGPL) 2.1][6]. 
+Licensed under the 
+[GNU Lesser General Public License (LGPL) 2.1](http://www.gnu.org/licenses/lgpl-2.1). 
 See LICENSE.txt for the full terms of LGPL 2.1.
 
-This is a [FileSystemProvider](http://docs.oracle.com/javase/7/docs/technotes/guides/io/fsp/filesystemprovider.html)
+This is a 
+[FileSystemProvider](http://docs.oracle.com/javase/7/docs/technotes/guides/io/fsp/filesystemprovider.html)
 for the [Java NIO.2 API](http://docs.oracle.com/javase/tutorial/essential/io/fileio.html) 
 that allows wrapping calls to an existing file system, for instance for the purpose 
 of logging, tracing paths in a manifest, etc.
@@ -39,7 +41,7 @@ For instance, to wrap the default file system:
         Files.createFile(p);
     }
 
-Or simply:
+Or using this convenience method:
 
 	try (WrappedFileSystem fs = WrappedFileSystemProvider.wrapDefaultFs()) {
         Path p = fs.getPath("tmp", "file.txt");
@@ -61,3 +63,5 @@ To register to listen for events occurring through the WrappedFileSystem
 You may want to use the uk.org.taverna.fswrap.FileSystemEventAdapter as a
 superclass if you are not interested in every captured event. 
 
+Note that in the current version of this library the listener will be
+informed of operations on any file systems wrapped using WrappedFileSystemProvider.
